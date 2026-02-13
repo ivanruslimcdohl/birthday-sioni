@@ -134,11 +134,12 @@ html, body {
 .card-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  padding: 16px 20px 40px;
+  gap: 14px;
+  padding: 14px 20px 60px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   flex: 1;
+  align-content: start;
 }
 
 .card-slot {
@@ -267,53 +268,45 @@ html, body {
   transform: translateY(-50%) rotate(15deg);
 }
 
-/* Opened card state */
+/* Opened card state - show photo */
 .card-slot.opened {
-  background: linear-gradient(160deg, #F0ECF0 0%, #E0D8E0 40%, #D5CDD5 100%);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
 .card-slot.opened::before {
-  background: linear-gradient(180deg, #C0C0C0, #D0D0D0, #C0C0C0);
+  background: none;
 }
 
 .card-slot.opened::after {
-  background: linear-gradient(90deg, #C0C0C0, #D0D0D0, #C0C0C0);
+  background: none;
 }
 
 .card-slot.opened .card-ribbon {
-  background: radial-gradient(circle, #D0D0D0 30%, #C0C0C0 70%);
-}
-
-.card-slot.opened .card-ribbon::before,
-.card-slot.opened .card-ribbon::after {
-  background: #C8C8C8;
+  display: none;
 }
 
 .card-slot.opened .card-number {
-  color: #BBB;
-  background: rgba(255,255,255,0.5);
-}
-
-.card-slot.opened .card-label {
-  color: #BBB;
-  background: rgba(255,255,255,0.4);
+  color: white;
+  background: rgba(0,0,0,0.35);
+  font-size: 20px;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 0;
 }
 
 .opened-check {
   display: none;
-  font-size: 32px;
+  font-size: 28px;
   position: absolute;
+  top: 8px;
+  left: 8px;
   z-index: 3;
 }
 
 .card-slot.opened .opened-check {
   display: block;
-}
-
-.card-slot.opened .card-number,
-.card-slot.opened .card-label {
-  opacity: 0.4;
 }
 
 /* ============================================
@@ -763,6 +756,9 @@ function renderGrid() {
   cards.forEach((card, i) => {
     const slot = document.createElement('div');
     slot.className = 'card-slot' + (cardStates[i] === 'opened' ? ' opened' : '') + (i === cards.length - 1 ? ' last-card' : '');
+    if (cardStates[i] === 'opened') {
+      slot.style.backgroundImage = `url('${card.front.image}')`;
+    }
     slot.innerHTML = `
       <div class="card-ribbon"></div>
       <span class="opened-check">✨</span>
@@ -917,6 +913,11 @@ function initScratchCanvas() {
   ctx.lineWidth = 40;
 
   let lastX = 0, lastY = 0;
+  let scratchedDistance = 0;
+  const totalArea = w * h;
+  // Approximate: each pixel of movement scratches lineWidth * 1px area
+  // Reveal when ~55% of area is covered
+  const revealThreshold = totalArea * 0.55 / 40;
 
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();
@@ -946,48 +947,39 @@ function initScratchCanvas() {
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
 
+    // Track distance scratched
+    const dx = pos.x - lastX;
+    const dy = pos.y - lastY;
+    scratchedDistance += Math.sqrt(dx * dx + dy * dy);
+
     lastX = pos.x;
     lastY = pos.y;
 
-    checkScratchProgress();
+    if (scratchedDistance > revealThreshold) {
+      revealFront();
+    }
   }
 
   function endScratch() {
     isScratching = false;
   }
 
-  // Remove old listeners by replacing canvas event handlers
-  canvas.ontouchstart = startScratch;
-  canvas.ontouchmove = doScratch;
-  canvas.ontouchend = endScratch;
-  canvas.onmousedown = startScratch;
-  canvas.onmousemove = doScratch;
-  canvas.onmouseup = endScratch;
-  canvas.onmouseleave = endScratch;
-}
+  // Remove old listeners first
+  canvas.ontouchstart = null;
+  canvas.ontouchmove = null;
+  canvas.ontouchend = null;
+  canvas.onmousedown = null;
+  canvas.onmousemove = null;
+  canvas.onmouseup = null;
 
-function checkScratchProgress() {
-  if (scratchRevealed) return;
-
-  const canvas = document.getElementById('scratch-canvas');
-  const ctx = canvas.getContext('2d');
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const pixels = imageData.data;
-
-  let transparent = 0;
-  let total = 0;
-
-  // Sample every 20th pixel for performance
-  for (let i = 3; i < pixels.length; i += 80) {
-    total++;
-    if (pixels[i] === 0) transparent++;
-  }
-
-  const percent = transparent / total;
-
-  if (percent > 0.55) {
-    revealFront();
-  }
+  // Use addEventListener with passive: false for reliable touch on iOS
+  canvas.addEventListener('touchstart', startScratch, { passive: false });
+  canvas.addEventListener('touchmove', doScratch, { passive: false });
+  canvas.addEventListener('touchend', endScratch, { passive: false });
+  canvas.addEventListener('mousedown', startScratch);
+  canvas.addEventListener('mousemove', doScratch);
+  canvas.addEventListener('mouseup', endScratch);
+  canvas.addEventListener('mouseleave', endScratch);
 }
 
 function revealFront() {
