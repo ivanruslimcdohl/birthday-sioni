@@ -711,6 +711,7 @@ let cardStates = loadState(); // 'unopened' | 'front' | 'opened'
 let currentCard = null;
 let isScratching = false;
 let scratchRevealed = false;
+let scratchAbort = null; // AbortController for cleaning up event listeners
 
 function loadState() {
   try {
@@ -963,22 +964,18 @@ function initScratchCanvas() {
     isScratching = false;
   }
 
-  // Remove old listeners first
-  canvas.ontouchstart = null;
-  canvas.ontouchmove = null;
-  canvas.ontouchend = null;
-  canvas.onmousedown = null;
-  canvas.onmousemove = null;
-  canvas.onmouseup = null;
+  // Abort old listeners from previous card
+  if (scratchAbort) scratchAbort.abort();
+  scratchAbort = new AbortController();
+  const sig = { signal: scratchAbort.signal };
 
-  // Use addEventListener with passive: false for reliable touch on iOS
-  canvas.addEventListener('touchstart', startScratch, { passive: false });
-  canvas.addEventListener('touchmove', doScratch, { passive: false });
-  canvas.addEventListener('touchend', endScratch, { passive: false });
-  canvas.addEventListener('mousedown', startScratch);
-  canvas.addEventListener('mousemove', doScratch);
-  canvas.addEventListener('mouseup', endScratch);
-  canvas.addEventListener('mouseleave', endScratch);
+  canvas.addEventListener('touchstart', startScratch, { passive: false, ...sig });
+  canvas.addEventListener('touchmove', doScratch, { passive: false, ...sig });
+  canvas.addEventListener('touchend', endScratch, { passive: false, ...sig });
+  canvas.addEventListener('mousedown', startScratch, sig);
+  canvas.addEventListener('mousemove', doScratch, sig);
+  canvas.addEventListener('mouseup', endScratch, sig);
+  canvas.addEventListener('mouseleave', endScratch, sig);
 }
 
 function revealFront() {
