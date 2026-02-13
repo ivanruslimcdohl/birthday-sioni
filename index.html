@@ -815,13 +815,16 @@ function openCard(index) {
   document.getElementById('flip-back-btn').classList.remove('visible');
   document.getElementById('scratch-instruction').style.opacity = '1';
 
-  // Set photo and text (cover div hides photo until canvas is drawn)
+  // Show cover FIRST to prevent photo flash
+  document.getElementById('scratch-cover').classList.remove('hidden');
+
+  // Set photo and text (cover hides photo)
   const photo = document.getElementById('scratch-photo');
   photo.style.backgroundImage = `url('${card.front.image}')`;
   document.getElementById('scratch-text').textContent = card.front.text;
   document.getElementById('scratch-text').classList.remove('visible');
 
-  // Show screen and init canvas (cover div prevents photo flash)
+  // Show screen and init canvas
   screen.classList.add('active');
   initScratchCanvas();
 }
