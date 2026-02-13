@@ -584,6 +584,13 @@ html, body {
   50% { transform: translateY(-8px); }
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-4px); }
+}
+
 @keyframes confettiFall {
   0% {
     top: -20px;
@@ -773,10 +780,11 @@ function renderGrid() {
     if (cardStates[i] === 'opened') {
       slot.style.backgroundImage = `url('${card.front.image}')`;
     }
+    const isLocked = i === cards.length - 1 && cardStates[i] !== 'opened' && !cardStates.slice(0, -1).every(s => s === 'opened');
     slot.innerHTML = `
       <div class="card-ribbon"></div>
       <span class="opened-check">✨</span>
-      <span class="card-number">${i + 1}</span>
+      <span class="card-number">${isLocked ? '🔒' : (i + 1)}</span>
     `;
     slot.addEventListener('click', () => openCard(i));
     grid.appendChild(slot);
@@ -789,6 +797,19 @@ function renderGrid() {
    OPEN CARD → SCRATCH PHASE
    ============================================ */
 function openCard(index) {
+  // Card 7 (index 6) can only be opened after all others
+  if (index === cards.length - 1 && cardStates[index] !== 'opened') {
+    const allOthersOpened = cardStates.slice(0, -1).every(s => s === 'opened');
+    if (!allOthersOpened) {
+      // Shake the card to hint it's locked
+      const slots = document.querySelectorAll('.card-slot');
+      const slot = slots[index];
+      slot.style.animation = 'shake 0.4s ease';
+      setTimeout(() => slot.style.animation = '', 400);
+      return;
+    }
+  }
+
   currentCard = index;
   scratchRevealed = false;
   const card = cards[index];
