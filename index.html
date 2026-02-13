@@ -393,6 +393,20 @@ html, body {
   opacity: 1;
 }
 
+/* Solid cover to prevent photo flash before canvas draws */
+.scratch-cover {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, #D8B4D8 0%, #C9A0C9 40%, #D4B8D4 100%);
+  z-index: 4;
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+.scratch-cover.hidden {
+  display: none;
+}
+
 /* The scratch canvas */
 #scratch-canvas {
   position: absolute;
@@ -639,6 +653,7 @@ html, body {
 
   <!-- Scratch phase -->
   <div class="scratch-container" id="scratch-container">
+    <div class="scratch-cover" id="scratch-cover"></div>
     <div class="scratch-photo" id="scratch-photo"></div>
     <div class="scratch-text" id="scratch-text"></div>
     <canvas id="scratch-canvas"></canvas>
@@ -711,7 +726,6 @@ let cardStates = loadState(); // 'unopened' | 'front' | 'opened'
 let currentCard = null;
 let isScratching = false;
 let scratchRevealed = false;
-let scratchAbort = null; // AbortController for cleaning up event listeners
 
 function loadState() {
   try {
@@ -801,21 +815,15 @@ function openCard(index) {
   document.getElementById('flip-back-btn').classList.remove('visible');
   document.getElementById('scratch-instruction').style.opacity = '1';
 
-  // Hide photo until canvas covers it
+  // Set photo and text (cover div hides photo until canvas is drawn)
   const photo = document.getElementById('scratch-photo');
-  photo.style.visibility = 'hidden';
-
-  // Set photo and text
   photo.style.backgroundImage = `url('${card.front.image}')`;
   document.getElementById('scratch-text').textContent = card.front.text;
   document.getElementById('scratch-text').classList.remove('visible');
 
-  // Show screen, draw canvas, then reveal photo underneath
+  // Show screen and init canvas (cover div prevents photo flash)
   screen.classList.add('active');
   initScratchCanvas();
-  requestAnimationFrame(() => {
-    photo.style.visibility = 'visible';
-  });
 }
 
 function showScratchRevealed(index) {
@@ -829,6 +837,9 @@ function showScratchRevealed(index) {
   container.style.display = 'block';
   flipContainer.classList.remove('active');
 
+  // Hide cover since we're showing revealed state
+  document.getElementById('scratch-cover').classList.add('hidden');
+
   document.getElementById('scratch-photo').style.backgroundImage = `url('${card.front.image}')`;
   document.getElementById('scratch-text').textContent = card.front.text;
   document.getElementById('scratch-text').classList.add('visible');
@@ -836,26 +847,99 @@ function showScratchRevealed(index) {
   document.getElementById('scratch-instruction').style.opacity = '0';
 
   scratchRevealed = true;
+  scratchCanvasReady = false; // Prevent scratch interaction on revealed state
   showFlipPrompt();
 }
 
 /* ============================================
-   SCRATCH CANVAS
+   SCRATCH CANVAS — Persistent listeners approach
    ============================================ */
-function initScratchCanvas() {
+let scratchCtx = null;
+let scratchLastX = 0, scratchLastY = 0;
+let scratchedDistance = 0;
+let scratchRevealThreshold = 0;
+let scratchCanvasReady = false;
+
+// Get scratch position from touch/mouse event
+function getScratchPos(e) {
   const canvas = document.getElementById('scratch-canvas');
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
+
+function onScratchStart(e) {
+  if (!scratchCanvasReady || scratchRevealed) return;
+  e.preventDefault();
+  isScratching = true;
+  const pos = getScratchPos(e);
+  scratchLastX = pos.x;
+  scratchLastY = pos.y;
+  document.getElementById('scratch-instruction').style.opacity = '0';
+}
+
+function onScratchMove(e) {
+  if (!isScratching || scratchRevealed || !scratchCanvasReady) return;
+  e.preventDefault();
+  const pos = getScratchPos(e);
+
+  scratchCtx.beginPath();
+  scratchCtx.moveTo(scratchLastX, scratchLastY);
+  scratchCtx.lineTo(pos.x, pos.y);
+  scratchCtx.stroke();
+
+  const dx = pos.x - scratchLastX;
+  const dy = pos.y - scratchLastY;
+  scratchedDistance += Math.sqrt(dx * dx + dy * dy);
+
+  scratchLastX = pos.x;
+  scratchLastY = pos.y;
+
+  if (scratchedDistance > scratchRevealThreshold) {
+    revealFront();
+  }
+}
+
+function onScratchEnd() {
+  isScratching = false;
+}
+
+// Register listeners ONCE on the canvas — never removed
+(function setupScratchListeners() {
+  const canvas = document.getElementById('scratch-canvas');
+  canvas.addEventListener('touchstart', onScratchStart, { passive: false });
+  canvas.addEventListener('touchmove', onScratchMove, { passive: false });
+  canvas.addEventListener('touchend', onScratchEnd, { passive: false });
+  canvas.addEventListener('mousedown', onScratchStart);
+  canvas.addEventListener('mousemove', onScratchMove);
+  canvas.addEventListener('mouseup', onScratchEnd);
+  canvas.addEventListener('mouseleave', onScratchEnd);
+})();
+
+function initScratchCanvas() {
   const container = document.getElementById('scratch-container');
+  const canvas = document.getElementById('scratch-canvas');
+  const cover = document.getElementById('scratch-cover');
+
+  // Show cover to hide photo while we set up
+  cover.classList.remove('hidden');
+
+  // Reset canvas state
+  canvas.classList.remove('revealed');
+  canvas.style.opacity = '';
+  canvas.style.pointerEvents = '';
+  scratchCanvasReady = false;
+  scratchedDistance = 0;
+
   const ctx = canvas.getContext('2d');
 
-  canvas.width = container.offsetWidth * 2; // Retina
+  // Resizing clears canvas and resets context state
+  canvas.width = container.offsetWidth * 2;
   canvas.height = container.offsetHeight * 2;
   canvas.style.width = container.offsetWidth + 'px';
   canvas.style.height = container.offsetHeight + 'px';
   ctx.scale(2, 2);
 
-  canvas.classList.remove('revealed');
-
-  // Draw lavender/purple scratch layer
   const w = container.offsetWidth;
   const h = container.offsetHeight;
 
@@ -912,70 +996,14 @@ function initScratchCanvas() {
   ctx.lineJoin = 'round';
   ctx.lineWidth = 40;
 
-  let lastX = 0, lastY = 0;
-  let scratchedDistance = 0;
-  const totalArea = w * h;
-  // Approximate: each pixel of movement scratches lineWidth * 1px area
-  // Reveal when ~55% of area is covered
-  const revealThreshold = totalArea * 0.55 / 40;
+  scratchCtx = ctx;
+  scratchRevealThreshold = (w * h) * 0.55 / 40;
 
-  function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches ? e.touches[0] : e;
-    return {
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top,
-    };
-  }
-
-  function startScratch(e) {
-    e.preventDefault();
-    isScratching = true;
-    const pos = getPos(e);
-    lastX = pos.x;
-    lastY = pos.y;
-    document.getElementById('scratch-instruction').style.opacity = '0';
-  }
-
-  function doScratch(e) {
-    if (!isScratching || scratchRevealed) return;
-    e.preventDefault();
-    const pos = getPos(e);
-
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-
-    // Track distance scratched
-    const dx = pos.x - lastX;
-    const dy = pos.y - lastY;
-    scratchedDistance += Math.sqrt(dx * dx + dy * dy);
-
-    lastX = pos.x;
-    lastY = pos.y;
-
-    if (scratchedDistance > revealThreshold) {
-      revealFront();
-    }
-  }
-
-  function endScratch() {
-    isScratching = false;
-  }
-
-  // Abort old listeners from previous card
-  if (scratchAbort) scratchAbort.abort();
-  scratchAbort = new AbortController();
-  const sig = { signal: scratchAbort.signal };
-
-  canvas.addEventListener('touchstart', startScratch, { passive: false, ...sig });
-  canvas.addEventListener('touchmove', doScratch, { passive: false, ...sig });
-  canvas.addEventListener('touchend', endScratch, { passive: false, ...sig });
-  canvas.addEventListener('mousedown', startScratch, sig);
-  canvas.addEventListener('mousemove', doScratch, sig);
-  canvas.addEventListener('mouseup', endScratch, sig);
-  canvas.addEventListener('mouseleave', endScratch, sig);
+  // Canvas is drawn — hide cover, allow scratching
+  requestAnimationFrame(() => {
+    cover.classList.add('hidden');
+    scratchCanvasReady = true;
+  });
 }
 
 function revealFront() {
