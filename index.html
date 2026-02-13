@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Happy Birthday!</title>
+<style>
+/* ============================================
+   CONFIG - Edit colors here if you want
+   ============================================ */
+:root {
+  --pink: #D8B4D8;
+  --pink-dark: #6B2D6B;
+  --gold: #C9A84C;
+  --gold-dark: #B8941F;
+  --white: #F8F0F8;
+  --bg: linear-gradient(135deg, #F5EBF5 0%, #EDE0ED 50%, #F5EBF5 100%);
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: #333;
+}
+
+/* ============================================
+   LANDING SCREEN
+   ============================================ */
+#landing {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  z-index: 100;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+#landing.hidden {
+  opacity: 0;
+  transform: scale(1.1);
+  pointer-events: none;
+}
+
+.landing-emoji {
+  font-size: 80px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.landing-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--pink-dark);
+  text-align: center;
+  margin: 20px 30px 8px;
+  animation: fadeInUp 1s ease 0.3s both;
+}
+
+.landing-subtitle {
+  font-size: 18px;
+  color: #999;
+  margin-bottom: 40px;
+  animation: fadeInUp 1s ease 0.6s both;
+}
+
+.landing-btn {
+  background: linear-gradient(135deg, var(--pink-dark), var(--gold-dark));
+  color: white;
+  border: none;
+  padding: 16px 40px;
+  border-radius: 50px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  animation: fadeInUp 1s ease 0.9s both, pulse 2s ease-in-out 2s infinite;
+  box-shadow: 0 4px 20px rgba(107, 45, 107, 0.4);
+  transition: transform 0.2s;
+}
+
+.landing-btn:active {
+  transform: scale(0.95);
+}
+
+/* ============================================
+   CARD GRID SCREEN
+   ============================================ */
+#grid-screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--bg);
+  z-index: 50;
+}
+
+#grid-screen.active {
+  display: flex;
+}
+
+.grid-header {
+  text-align: center;
+  padding: 20px 20px 10px;
+  flex-shrink: 0;
+}
+
+.grid-header h2 {
+  font-size: 22px;
+  color: var(--pink-dark);
+}
+
+.grid-header p {
+  font-size: 14px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px 20px 40px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+}
+
+.card-slot {
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #E8D5E8 0%, #D8B4D8 40%, #C9A0C9 100%);
+  box-shadow: 0 6px 20px rgba(107, 45, 107, 0.2), inset 0 1px 0 rgba(255,255,255,0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Horizontal ribbon */
+.card-slot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 14px;
+  transform: translateY(-50%);
+  background: linear-gradient(180deg, #C9A84C, #D4AF37, #C9A84C);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Vertical ribbon */
+.card-slot::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #C9A84C, #D4AF37, #C9A84C);
+  box-shadow: 1px 0 3px rgba(0,0,0,0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-slot:active {
+  transform: scale(0.96);
+  box-shadow: 0 3px 10px rgba(107, 45, 107, 0.2);
+}
+
+.card-slot.last-card {
+  grid-column: 1 / -1;
+  max-width: calc(50% - 8px);
+  justify-self: center;
+}
+
+.card-number {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--pink-dark);
+  z-index: 3;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.9);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(107, 45, 107, 0.2);
+  margin-bottom: 30px;
+}
+
+.card-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pink-dark);
+  margin-top: 24px;
+  z-index: 3;
+  background: rgba(255,255,255,0.75);
+  padding: 3px 12px;
+  border-radius: 10px;
+}
+
+/* Bow - center decoration */
+.card-ribbon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  background: radial-gradient(circle, #D4AF37 30%, #C9A84C 70%);
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Bow loops */
+.card-ribbon::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -14px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 16px;
+  background: linear-gradient(135deg, #D4AF37, #C9A84C);
+  border-radius: 50% 0 50% 50%;
+  transform-origin: right center;
+  transform: translateY(-50%) rotate(-15deg);
+}
+
+.card-ribbon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 16px;
+  background: linear-gradient(225deg, #D4AF37, #C9A84C);
+  border-radius: 0 50% 50% 50%;
+  transform-origin: left center;
+  transform: translateY(-50%) rotate(15deg);
+}
+
+/* Opened card state */
+.card-slot.opened {
+  background: linear-gradient(160deg, #F0ECF0 0%, #E0D8E0 40%, #D5CDD5 100%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card-slot.opened::before {
+  background: linear-gradient(180deg, #C0C0C0, #D0D0D0, #C0C0C0);
+}
+
+.card-slot.opened::after {
+  background: linear-gradient(90deg, #C0C0C0, #D0D0D0, #C0C0C0);
+}
+
+.card-slot.opened .card-ribbon {
+  background: radial-gradient(circle, #D0D0D0 30%, #C0C0C0 70%);
+}
+
+.card-slot.opened .card-ribbon::before,
+.card-slot.opened .card-ribbon::after {
+  background: #C8C8C8;
+}
+
+.card-slot.opened .card-number {
+  color: #BBB;
+  background: rgba(255,255,255,0.5);
+}
+
+.card-slot.opened .card-label {
+  color: #BBB;
+  background: rgba(255,255,255,0.4);
+}
+
+.opened-check {
+  display: none;
+  font-size: 32px;
+  position: absolute;
+  z-index: 3;
+}
+
+.card-slot.opened .opened-check {
+  display: block;
+}
+
+.card-slot.opened .card-number,
+.card-slot.opened .card-label {
+  opacity: 0.4;
+}
+
+/* ============================================
+   SCRATCH SCREEN (Full-screen overlay)
+   ============================================ */
+#scratch-screen {
+  position: fixed;
+  inset: 0;
+  background: rgb(0, 0, 0);
+  z-index: 200;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#scratch-screen.active {
+  display: flex;
+}
+
+.scratch-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 210;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scratch-instruction {
+  position: absolute;
+  top: 70px;
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  z-index: 210;
+  transition: opacity 0.5s;
+}
+
+.scratch-container {
+  position: relative;
+  width: 320px;
+  height: 420px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+/* The photo underneath */
+.scratch-photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Text overlay on photo */
+.scratch-text {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 60px 16px 16px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  line-height: 1.4;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  z-index: 2;
+}
+
+.scratch-text.visible {
+  opacity: 1;
+}
+
+/* The scratch canvas */
+#scratch-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 20px;
+  transition: opacity 0.8s ease;
+  touch-action: none;
+}
+
+#scratch-canvas.revealed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Flip prompt */
+.flip-prompt {
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  animation: bounceUp 1s ease infinite;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+
+.flip-prompt.visible {
+  opacity: 1;
+}
+
+/* ============================================
+   FLIP VIEW
+   ============================================ */
+.flip-container {
+  position: relative;
+  width: 320px;
+  height: 420px;
+  perspective: 1200px;
+  display: none;
+}
+
+.flip-container.active {
+  display: block;
+}
+
+.flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-front, .flip-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+.flip-back {
+  transform: rotateY(180deg);
+}
+
+.flip-photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.flip-text {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 60px 16px 16px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  line-height: 1.4;
+}
+
+.flip-back-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 12px 30px;
+  border-radius: 50px;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.5s ease 1s;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+
+.flip-back-btn.visible {
+  opacity: 1;
+}
+
+/* ============================================
+   CONFETTI & HEARTS
+   ============================================ */
+.confetti-container, .hearts-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 300;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: -20px;
+  animation: confettiFall linear forwards;
+}
+
+.heart-piece {
+  position: absolute;
+  font-size: 24px;
+  bottom: -30px;
+  animation: heartFloat linear forwards;
+}
+
+/* ============================================
+   FINAL CELEBRATION (Card 7)
+   ============================================ */
+.final-celebration {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,182,193,0.3), transparent);
+  pointer-events: none;
+  z-index: 250;
+  opacity: 0;
+  transition: opacity 1s;
+}
+
+.final-celebration.active {
+  opacity: 1;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(107, 45, 107, 0.4); }
+  50% { box-shadow: 0 4px 30px rgba(107, 45, 107, 0.7); }
+}
+
+@keyframes bounceUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes confettiFall {
+  0% {
+    top: -20px;
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    top: 110vh;
+    transform: rotate(720deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes heartFloat {
+  0% {
+    bottom: -30px;
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+  100% {
+    bottom: 110vh;
+    opacity: 0;
+    transform: scale(1.5) translateX(30px);
+  }
+}
+
+/* Progress indicator */
+.progress {
+  text-align: center;
+  padding: 8px;
+  font-size: 12px;
+  color: #999;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     LANDING SCREEN
+     ============================================ -->
+<div id="landing">
+  <div class="landing-emoji">🎂</div>
+  <h1 class="landing-title">Happy Birthday, Bocil Kesayanganku!</h1>
+  <p class="landing-subtitle">Aku buatin sesuatu yang spesial buat kamu</p>
+  <button class="landing-btn" onclick="openGrid()">Open Your Surprise ✨</button>
+</div>
+
+<!-- ============================================
+     CARD GRID
+     ============================================ -->
+<div id="grid-screen">
+  <div class="grid-header">
+    <h2>Your Birthday Cards 🎁</h2>
+    <p>Tap a card to scratch and reveal!</p>
+  </div>
+  <div class="card-grid" id="card-grid"></div>
+  <div class="progress" id="progress"></div>
+</div>
+
+<!-- ============================================
+     SCRATCH / FLIP SCREEN
+     ============================================ -->
+<div id="scratch-screen">
+  <button class="scratch-close" onclick="closeScratch()">✕</button>
+  <p class="scratch-instruction" id="scratch-instruction">Scratch with your finger to reveal!</p>
+
+  <!-- Scratch phase -->
+  <div class="scratch-container" id="scratch-container">
+    <div class="scratch-photo" id="scratch-photo"></div>
+    <div class="scratch-text" id="scratch-text"></div>
+    <canvas id="scratch-canvas"></canvas>
+  </div>
+  <div class="flip-prompt" id="flip-prompt">Tap the card to flip! 👆</div>
+
+  <!-- Flip phase -->
+  <div class="flip-container" id="flip-container">
+    <div class="flip-inner" id="flip-inner">
+      <div class="flip-front">
+        <div class="flip-photo" id="flip-front-photo"></div>
+        <div class="flip-text" id="flip-front-text"></div>
+      </div>
+      <div class="flip-back">
+        <div class="flip-photo" id="flip-back-photo"></div>
+        <div class="flip-text" id="flip-back-text"></div>
+      </div>
+    </div>
+  </div>
+  <button class="flip-back-btn" id="flip-back-btn" onclick="closeScratch()">Back to Cards</button>
+</div>
+
+<!-- Confetti / Hearts containers -->
+<div class="confetti-container" id="confetti-container"></div>
+<div class="hearts-container" id="hearts-container"></div>
+<div class="final-celebration" id="final-celebration"></div>
+
+<script>
+/* ============================================
+   CONFIGURATION - EDIT THIS SECTION!
+   ============================================ */
+const BIRTHDAY_GIRL = "Sioni";
+
+const cards = [
+  {
+    front: { image: "photos/photo1.jpg", text: "Es krim mahal pertama kita" },
+    back:  { image: "photos/photo2.jpg", text: "Birthday surprise-mu tahun lalu... RIP Piplup, semoga kamu bahagia di mana pun kamu berada 🐧" },
+  },
+  {
+    front: { image: "photos/photo3.jpg", text: "Minum aja pipinya kayak bakpao, bocil banget sih" },
+    back:  { image: "photos/photo4.jpg", text: 'Foto bareng "beruang kutub"... Shushu maafin ya dipanggil beruang 🐶' },
+  },
+  {
+    front: { image: "photos/photo5.jpg", text: "Makasih udah bela-belain ke Bogor, sampe jam 11 malem demi aku" },
+    back:  { image: "photos/photo6.jpg", text: "Habis 1jt di Fun World... tapi senyummu? Nggak ternilai harganya" },
+  },
+  {
+    front: { image: "photos/photo7.jpg", text: "Fine dining pertama kita di Gumaya, baby girl-ku yang paling cantik" },
+    back:  { image: "photos/photo8.jpg", text: "Random selfie sebelum ke gereja... itu rok dari mamiku kan? Cocok banget di kamu" },
+  },
+  {
+    front: { image: "photos/photo9.jpg", text: "Shushu sampe dikasih clip rambut, udah akrab sama baby girl-ku" },
+    back:  { image: "photos/photo10.jpg", text: "Ngidam tiramisu sampe pindah resto, yang penting kesampean ya sayang 😂" },
+  },
+  {
+    front: { image: "photos/photo11.jpg", text: "Pose ngambek tapi tetep the cutest, gimana sih" },
+    back:  { image: "photos/photo12.jpg", text: "Pose psikopat tapi tetep gemesin... serem yang lucu itu cuma kamu" },
+  },
+  {
+    front: { image: "photos/photo13.jpg", text: "Kondangan pake batik tetep paling cantik dan paling lucu" },
+    back:  { image: "photos/photo14.jpg", text: "First date kita... masih malu-malu difoto. Dari hari itu sampai selamanya, kamu selalu jadi baby girl-ku yang paling cute. Happy Birthday sayang! 💕" },
+  },
+];
+
+/* ============================================
+   STATE
+   ============================================ */
+const STORAGE_KEY = 'birthday-cards-state';
+let cardStates = loadState(); // 'unopened' | 'front' | 'opened'
+let currentCard = null;
+let isScratching = false;
+let scratchRevealed = false;
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  return cards.map(() => 'unopened');
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cardStates));
+  } catch (e) {}
+}
+
+/* ============================================
+   LANDING
+   ============================================ */
+function openGrid() {
+  document.getElementById('landing').classList.add('hidden');
+  document.getElementById('grid-screen').classList.add('active');
+  renderGrid();
+}
+
+// Skip landing if cards already opened
+if (cardStates.some(s => s !== 'unopened')) {
+  document.getElementById('landing').classList.add('hidden');
+  document.getElementById('grid-screen').classList.add('active');
+  setTimeout(renderGrid, 100);
+}
+
+/* ============================================
+   CARD GRID
+   ============================================ */
+function renderGrid() {
+  const grid = document.getElementById('card-grid');
+  grid.innerHTML = '';
+
+  const labels = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'];
+  const openedCount = cardStates.filter(s => s === 'opened').length;
+
+  cards.forEach((card, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'card-slot' + (cardStates[i] === 'opened' ? ' opened' : '') + (i === cards.length - 1 ? ' last-card' : '');
+    slot.innerHTML = `
+      <div class="card-ribbon"></div>
+      <span class="opened-check">✨</span>
+      <span class="card-number">${i + 1}</span>
+    `;
+    slot.addEventListener('click', () => openCard(i));
+    grid.appendChild(slot);
+  });
+
+  document.getElementById('progress').textContent = `${openedCount} of ${cards.length} cards opened`;
+}
+
+/* ============================================
+   OPEN CARD → SCRATCH PHASE
+   ============================================ */
+function openCard(index) {
+  currentCard = index;
+  scratchRevealed = false;
+  const card = cards[index];
+  const screen = document.getElementById('scratch-screen');
+  const container = document.getElementById('scratch-container');
+  const flipContainer = document.getElementById('flip-container');
+
+  // If already fully opened, go straight to flip view
+  if (cardStates[index] === 'opened') {
+    showFlipView(index, true);
+    return;
+  }
+
+  // If front already revealed, show scratch revealed state
+  if (cardStates[index] === 'front') {
+    showScratchRevealed(index);
+    return;
+  }
+
+  // Prepare elements
+  container.style.display = 'block';
+  flipContainer.classList.remove('active');
+  document.getElementById('flip-prompt').classList.remove('visible');
+  document.getElementById('flip-back-btn').classList.remove('visible');
+  document.getElementById('scratch-instruction').style.opacity = '1';
+
+  // Hide photo until canvas covers it
+  const photo = document.getElementById('scratch-photo');
+  photo.style.visibility = 'hidden';
+
+  // Set photo and text
+  photo.style.backgroundImage = `url('${card.front.image}')`;
+  document.getElementById('scratch-text').textContent = card.front.text;
+  document.getElementById('scratch-text').classList.remove('visible');
+
+  // Show screen, draw canvas, then reveal photo underneath
+  screen.classList.add('active');
+  initScratchCanvas();
+  requestAnimationFrame(() => {
+    photo.style.visibility = 'visible';
+  });
+}
+
+function showScratchRevealed(index) {
+  const card = cards[index];
+  const screen = document.getElementById('scratch-screen');
+  const container = document.getElementById('scratch-container');
+  const canvas = document.getElementById('scratch-canvas');
+  const flipContainer = document.getElementById('flip-container');
+
+  screen.classList.add('active');
+  container.style.display = 'block';
+  flipContainer.classList.remove('active');
+
+  document.getElementById('scratch-photo').style.backgroundImage = `url('${card.front.image}')`;
+  document.getElementById('scratch-text').textContent = card.front.text;
+  document.getElementById('scratch-text').classList.add('visible');
+  canvas.classList.add('revealed');
+  document.getElementById('scratch-instruction').style.opacity = '0';
+
+  scratchRevealed = true;
+  showFlipPrompt();
+}
+
+/* ============================================
+   SCRATCH CANVAS
+   ============================================ */
+function initScratchCanvas() {
+  const canvas = document.getElementById('scratch-canvas');
+  const container = document.getElementById('scratch-container');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = container.offsetWidth * 2; // Retina
+  canvas.height = container.offsetHeight * 2;
+  canvas.style.width = container.offsetWidth + 'px';
+  canvas.style.height = container.offsetHeight + 'px';
+  ctx.scale(2, 2);
+
+  canvas.classList.remove('revealed');
+
+  // Draw lavender/purple scratch layer
+  const w = container.offsetWidth;
+  const h = container.offsetHeight;
+
+  // Lavender gradient base
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, '#D8B4D8');
+  grad.addColorStop(0.25, '#C9A0C9');
+  grad.addColorStop(0.5, '#D4B8D4');
+  grad.addColorStop(0.75, '#B48AB4');
+  grad.addColorStop(1, '#D0ACD0');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Gold accent swirls
+  ctx.strokeStyle = 'rgba(201, 168, 76, 0.4)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    const startX = Math.random() * w;
+    const startY = Math.random() * h;
+    ctx.moveTo(startX, startY);
+    ctx.bezierCurveTo(
+      startX + Math.random() * 80, startY + Math.random() * 40,
+      startX + Math.random() * 120, startY - Math.random() * 40,
+      startX + Math.random() * 160, startY + Math.random() * 20
+    );
+    ctx.stroke();
+  }
+
+  // Sparkle dots (white + gold mix)
+  for (let i = 0; i < 100; i++) {
+    const x = Math.random() * w;
+    const y = Math.random() * h;
+    const r = Math.random() * 3 + 1;
+    const alpha = Math.random() * 0.5 + 0.2;
+    const isGold = Math.random() > 0.6;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = isGold
+      ? `rgba(201, 168, 76, ${alpha})`
+      : `rgba(255, 255, 255, ${alpha})`;
+    ctx.fill();
+  }
+
+  // Scratch text hint
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.font = '600 20px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Scratch me!', w / 2, h / 2);
+
+  // Setup scratch interaction
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 40;
+
+  let lastX = 0, lastY = 0;
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return {
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    };
+  }
+
+  function startScratch(e) {
+    e.preventDefault();
+    isScratching = true;
+    const pos = getPos(e);
+    lastX = pos.x;
+    lastY = pos.y;
+    document.getElementById('scratch-instruction').style.opacity = '0';
+  }
+
+  function doScratch(e) {
+    if (!isScratching || scratchRevealed) return;
+    e.preventDefault();
+    const pos = getPos(e);
+
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+
+    lastX = pos.x;
+    lastY = pos.y;
+
+    checkScratchProgress();
+  }
+
+  function endScratch() {
+    isScratching = false;
+  }
+
+  // Remove old listeners by replacing canvas event handlers
+  canvas.ontouchstart = startScratch;
+  canvas.ontouchmove = doScratch;
+  canvas.ontouchend = endScratch;
+  canvas.onmousedown = startScratch;
+  canvas.onmousemove = doScratch;
+  canvas.onmouseup = endScratch;
+  canvas.onmouseleave = endScratch;
+}
+
+function checkScratchProgress() {
+  if (scratchRevealed) return;
+
+  const canvas = document.getElementById('scratch-canvas');
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = imageData.data;
+
+  let transparent = 0;
+  let total = 0;
+
+  // Sample every 20th pixel for performance
+  for (let i = 3; i < pixels.length; i += 80) {
+    total++;
+    if (pixels[i] === 0) transparent++;
+  }
+
+  const percent = transparent / total;
+
+  if (percent > 0.55) {
+    revealFront();
+  }
+}
+
+function revealFront() {
+  if (scratchRevealed) return;
+  scratchRevealed = true;
+
+  const canvas = document.getElementById('scratch-canvas');
+  canvas.classList.add('revealed');
+
+  document.getElementById('scratch-text').classList.add('visible');
+
+  // Update state
+  cardStates[currentCard] = 'front';
+  saveState();
+
+  // Confetti!
+  spawnConfetti(30);
+
+  // Show flip prompt after a moment
+  setTimeout(showFlipPrompt, 1200);
+}
+
+function showFlipPrompt() {
+  const prompt = document.getElementById('flip-prompt');
+  prompt.classList.add('visible');
+
+  // Make scratch container clickable for flip
+  const container = document.getElementById('scratch-container');
+  container.style.cursor = 'pointer';
+  container.onclick = () => {
+    container.onclick = null;
+    container.style.cursor = '';
+    prompt.classList.remove('visible');
+    transitionToFlip();
+  };
+}
+
+/* ============================================
+   FLIP PHASE
+   ============================================ */
+function transitionToFlip() {
+  const card = cards[currentCard];
+  const scratchContainer = document.getElementById('scratch-container');
+  const flipContainer = document.getElementById('flip-container');
+
+  // Set up flip card faces
+  document.getElementById('flip-front-photo').style.backgroundImage = `url('${card.front.image}')`;
+  document.getElementById('flip-front-text').textContent = card.front.text;
+  document.getElementById('flip-back-photo').style.backgroundImage = `url('${card.back.image}')`;
+  document.getElementById('flip-back-text').textContent = card.back.text;
+
+  // Hide scratch container, show flip container
+  scratchContainer.style.display = 'none';
+  flipContainer.classList.add('active');
+
+  // Reset flip state
+  document.getElementById('flip-inner').classList.remove('flipped');
+
+  // Trigger flip after a brief pause
+  setTimeout(() => {
+    document.getElementById('flip-inner').classList.add('flipped');
+
+    // Hearts animation on back reveal
+    setTimeout(() => {
+      spawnHearts(15);
+
+      // Extra celebration for final card
+      if (currentCard === cards.length - 1) {
+        spawnConfetti(60);
+        spawnHearts(25);
+        document.getElementById('final-celebration').classList.add('active');
+        setTimeout(() => {
+          spawnConfetti(40);
+          spawnHearts(20);
+        }, 1000);
+      }
+    }, 600);
+
+    // Show back button
+    document.getElementById('flip-back-btn').classList.add('visible');
+
+    // Update state
+    cardStates[currentCard] = 'opened';
+    saveState();
+  }, 300);
+}
+
+function showFlipView(index, alreadyOpened) {
+  const card = cards[index];
+  const screen = document.getElementById('scratch-screen');
+  const scratchContainer = document.getElementById('scratch-container');
+  const flipContainer = document.getElementById('flip-container');
+
+  screen.classList.add('active');
+  scratchContainer.style.display = 'none';
+  document.getElementById('scratch-instruction').style.opacity = '0';
+  document.getElementById('flip-prompt').classList.remove('visible');
+
+  // Set up flip card
+  document.getElementById('flip-front-photo').style.backgroundImage = `url('${card.front.image}')`;
+  document.getElementById('flip-front-text').textContent = card.front.text;
+  document.getElementById('flip-back-photo').style.backgroundImage = `url('${card.back.image}')`;
+  document.getElementById('flip-back-text').textContent = card.back.text;
+
+  flipContainer.classList.add('active');
+
+  // Show flipped state immediately if already opened
+  if (alreadyOpened) {
+    document.getElementById('flip-inner').classList.add('flipped');
+  }
+
+  document.getElementById('flip-back-btn').classList.add('visible');
+}
+
+/* ============================================
+   CLOSE / BACK
+   ============================================ */
+function closeScratch() {
+  const screen = document.getElementById('scratch-screen');
+  const flipContainer = document.getElementById('flip-container');
+  const scratchContainer = document.getElementById('scratch-container');
+
+  screen.classList.remove('active');
+  flipContainer.classList.remove('active');
+  scratchContainer.style.display = 'block';
+  document.getElementById('flip-inner').classList.remove('flipped');
+  document.getElementById('flip-back-btn').classList.remove('visible');
+  document.getElementById('final-celebration').classList.remove('active');
+
+  currentCard = null;
+  renderGrid();
+}
+
+/* ============================================
+   CONFETTI
+   ============================================ */
+function spawnConfetti(count) {
+  const container = document.getElementById('confetti-container');
+  const colors = ['#D8B4D8', '#C9A84C', '#B48AB4', '#6B2D6B', '#E8D5E8', '#DDA0DD', '#D4AF37'];
+
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = (Math.random() * 8 + 6) + 'px';
+    piece.style.height = (Math.random() * 8 + 6) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.5) + 's';
+    container.appendChild(piece);
+
+    // Cleanup
+    setTimeout(() => piece.remove(), 5000);
+  }
+}
+
+/* ============================================
+   HEARTS
+   ============================================ */
+function spawnHearts(count) {
+  const container = document.getElementById('hearts-container');
+  const heartEmojis = ['💕', '💖', '💗', '💝', '❤️', '🩷'];
+
+  for (let i = 0; i < count; i++) {
+    const heart = document.createElement('div');
+    heart.className = 'heart-piece';
+    heart.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+    heart.style.left = Math.random() * 100 + 'vw';
+    heart.style.fontSize = (Math.random() * 16 + 16) + 'px';
+    heart.style.animationDuration = (Math.random() * 3 + 3) + 's';
+    heart.style.animationDelay = (Math.random() * 1) + 's';
+    container.appendChild(heart);
+
+    // Cleanup
+    setTimeout(() => heart.remove(), 7000);
+  }
+}
+
+/* ============================================
+   PREVENT OVERSCROLL
+   ============================================ */
+document.body.addEventListener('touchmove', function(e) {
+  if (document.getElementById('scratch-screen').classList.contains('active')) {
+    const grid = e.target.closest('.card-grid');
+    if (!grid) e.preventDefault();
+  }
+}, { passive: false });
+</script>
+</body>
+</html>
